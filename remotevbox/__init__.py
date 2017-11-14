@@ -11,4 +11,4 @@ Usage:
     '5.1.30'
 """
 
-from  . import connect, disconnect
+from  .api import connect, disconnect
