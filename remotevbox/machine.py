@@ -2,6 +2,9 @@
 IMachine class represents IMachine object
 """
 
+import logging
+import zeep.exceptions
+
 
 class IMachine(object):
     """IMachine constructs object with service, manager and id"""
@@ -14,13 +17,19 @@ class IMachine(object):
     def launch(self):
         """Launches stopped or powered off machine
         Returns IProgress"""
-        progress = self.service.IMachine_launchVMProcess(self.mid,
-                                                         self.session,
-                                                         "nogui",
-                                                         "")
-        return progress
+        try:
+            progress = self.service.IMachine_launchVMProcess(self.mid,
+                                                             self.session,
+                                                             "headless",
+                                                             "")
+            return progress
+        except zeep.exceptions.Fault as err:
+            logging.error(err)
 
     def stop(self):
         """Save state of running machine"""
-        progress = self.service.IMachine_saveState(self.mid)
-        return progress
+        try:
+            progress = self.service.IMachine_saveState(self.mid)
+            return progress
+        except zeep.exceptions.Fault as err:
+            logging.error(err)
