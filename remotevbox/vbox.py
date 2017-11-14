@@ -5,12 +5,13 @@ IVirtualBox binding
 import logging
 import zeep
 
-from . import IMachine
+from .machine import IMachine
+from .websession_manager import IWebsessionManager
 
 VBOX_SOAP_BINDING = '{http://www.virtualbox.org/}vboxBinding'
 
 
-class IVirtualBox():
+class IVirtualBox(object):
     def __init__(self, location, user, password):
         self.log = logging.getLogger()
 
@@ -21,29 +22,37 @@ class IVirtualBox():
         self.client = zeep.Client(location + '?wsdl')
         self.service = self.client.create_service(VBOX_SOAP_BINDING,
                                                   self.location)
-        self.login(user, password)
+        self.manager = IWebsessionManager(self.service, user, password)
 
-    def login(self, user, password):
-        """Use IWebsessionManager to login and exit if credentials are false
+        self.handle = self.manager.handle
 
-        :param user: username (VBOX_USER from /etc/default/virtualbox)
-        :param password: unix password of the supplied user on VirtualBox host
-        """
-        try:
-            self.handle = self.service.IWebsessionManager_logon(user, password)
-        except zeep.exceptions.Fault:
-            logging.error("Wrong credentials supplied")
+    def get_session_manager(self):
+        return self.manager
 
-    def get_machines(self):
+    def list_machines(self):
         """Lists all machines available"""
         return self.service.IVirtualBox_getMachines(self.handle)
+
+    def get_machine(self, name):
+        """Returns IMachine"""
+        mid = self.find_machine(name)
+        return IMachine(self.service, self.manager, mid)
 
     def find_machine(self, name):
         """Returns virtual machine identificator by it's name"""
         try:
-            id = self.service.IVirtualBox_findMachine(self.handle, name)
+            return self.service.IVirtualBox_findMachine(self.handle, name)
         except zeep.exceptions.Fault as e:
             logging.error(e)
+
+    def launch_machine(self, name):
+        machine = self.service.IVirtualBox_findMachine(self.handle, name)
+        session = self.manager.get_session(self.handle)
+        vm_id = self.service.IMachine_launchVMProcess(machine,
+                                                      session,
+                                                      "nogui",
+                                                      "")
+        return vm_id
 
     def open_machine(self, name):
         """Constructs :class:`IMachine <IMachine>`
