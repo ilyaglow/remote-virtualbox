@@ -45,15 +45,6 @@ class IVirtualBox(object):
         except zeep.exceptions.Fault as e:
             logging.error(e)
 
-    def launch_machine(self, name):
-        machine = self.service.IVirtualBox_findMachine(self.handle, name)
-        session = self.manager.get_session(self.handle)
-        vm_id = self.service.IMachine_launchVMProcess(machine,
-                                                      session,
-                                                      "nogui",
-                                                      "")
-        return vm_id
-
     def open_machine(self, name):
         """Constructs :class:`IMachine <IMachine>`
 
@@ -64,12 +55,6 @@ class IVirtualBox(object):
 
         # return IMachine(self.service.IVirtualBox_openMachine(self.handle, name),
         #                 self.handle)
-        pass
-
-    def start_machine(self, name):
-        pass
-
-    def stop_machine(self, name):
         pass
 
     def get_version(self):
