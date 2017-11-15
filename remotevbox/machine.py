@@ -26,7 +26,7 @@ class IMachine(object):
         except zeep.exceptions.Fault as err:
             logging.error(err)
 
-    def stop(self):
+    def save(self):
         """Save state of running machine"""
         try:
             progress = self.service.IMachine_saveState(self.mid)
