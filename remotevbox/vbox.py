@@ -3,6 +3,8 @@ IVirtualBox binding
 """
 
 import logging
+import requests.exceptions
+import sys
 import zeep
 
 from .machine import IMachine
@@ -19,12 +21,20 @@ class IVirtualBox(object):
             location = location + '/'
 
         self.location = location
-        self.client = zeep.Client(location + '?wsdl')
+        self.client = self.get_client(location + '?wsdl')
         self.service = self.client.create_service(VBOX_SOAP_BINDING,
                                                   self.location)
         self.manager = IWebsessionManager(self.service, user, password)
 
         self.handle = self.manager.handle
+
+    def get_client(self, location):
+        try:
+            client = zeep.Client(location)
+            return client
+        except requests.exceptions.ConnectionError:
+            logging.error("Location: {} is not available".format(location))
+            sys.exit(1)
 
     def get_session_manager(self):
         return self.manager
@@ -52,7 +62,6 @@ class IVirtualBox(object):
 
         :param name: virtual machine name
         """
-
         # return IMachine(self.service.IVirtualBox_openMachine(self.handle, name),
         #                 self.handle)
         pass
@@ -60,3 +69,7 @@ class IVirtualBox(object):
     def get_version(self):
         """Returns string with a VirtualBox version"""
         return self.service.IVirtualBox_getVersion(self.handle)
+
+    def disconnect(self):
+        """Disconnects"""
+        self.manager.logoff()
