@@ -13,6 +13,8 @@ class IMachine(object):
         self.service = service
         self.manager = manager
         self.session = self.manager.get_session(self.mid)
+        self.console = None
+        self.mutable = None
 
     def launch(self):
         """Launches stopped or powered off machine
@@ -22,14 +24,79 @@ class IMachine(object):
                                                              self.session,
                                                              "headless",
                                                              "")
-            return progress
+            iprogress = IProgress(progress, self.service)
+            iprogress.wait()
+            self.console = self._get_console()
         except zeep.exceptions.Fault as err:
-            logging.error(err)
+            logging.error("Launch operation failed: %s", err)
+
+    def lock(self, mode="Shared"):
+        """Locks current machine could be Shared or Write
+        If changing of the machine settings is needed then set mode to Write"""
+        try:
+            self.service.IMachine_lockMachine(self.mid,
+                                              self.session,
+                                              mode)
+        except zeep.exceptions.Fault as err:
+            logging.error("Lock operation failed: %s", err)
+
+    def unlock(self):
+        """Unlocks current machine"""
+        try:
+            self.service.ISession_unlockMachine(self.session)
+        except zeep.exceptions.Fault as err:
+            logging.error("Unlock operation failed: %s", err)
+
+    def _get_session_state(self):
+        """Get state of the current session"""
+        return self.service.ISession_getState(self.session)
+
+    def _get_state(self):
+        """Get state of machine"""
+        return self.service.IMachine_getState(self.mid)
+
+    def _get_console(self):
+        """Returns id with IConsole obect"""
+        return self.service.ISession_getConsole(self.session)
+
+    def _get_mutable(self):
+        """Return mutable ISession"""
+        self.mutable = self.service.ISession_getMachine(self.session)
 
     def save(self):
         """Save state of running machine"""
         try:
-            progress = self.service.IMachine_saveState(self.mid)
-            return progress
+            self._get_mutable()
+            iprogress = IProgress(self.service.IMachine_saveState(self.mutable),
+                                  self.service)
+            iprogress.wait()
         except zeep.exceptions.Fault as err:
-            logging.error(err)
+            logging.error("Save operation failed: %s", err)
+
+    def pause(self):
+        """Set machine to pause state"""
+        self.service.IConsole_pause(self.console)
+
+
+class IProgress(object):
+    """IProgress constructs object to deal with waiting"""
+    def __init__(self, progress_id, service):
+        self.pid = progress_id
+        self.service = service
+
+    def wait(self, miliseconds=-1):
+        """Wait for infinite time by default"""
+        try:
+            self.service.IProgress_waitForCompletion(self.pid, miliseconds)
+        except zeep.exceptions.Fault as err:
+            logging.error("Progress wait failed: %s", err)
+
+        return self.status()
+
+    def status(self):
+        """Check status of the progress"""
+        status = self.service.IProgress_getResultCode(self.pid)
+        if status != 0:
+            return "Fail"
+
+        return "Success"
