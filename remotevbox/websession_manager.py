@@ -31,3 +31,7 @@ class IWebsessionManager(object):
             return self.service.IWebsessionManager_logon(user, password)
         except zeep.exceptions.Fault:
             logging.error("Wrong credentials supplied")
+
+    def logoff(self):
+        """Logs off and destroy all managed object references"""
+        self.service.IWebsessionManager_logoff(self.handle)
