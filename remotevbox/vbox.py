@@ -41,8 +41,8 @@ class IVirtualBox(object):
 
     def list_machines(self):
         """Lists all machines available"""
-        for m in self.service.IVirtualBox_getMachines(self.handle):
-            print(self.service.IMachine_getName(m))
+        return [self.service.IMachine_getName(m)
+                for m in self.service.IVirtualBox_getMachines(self.handle)]
 
     def get_machine(self, name):
         """Returns IMachine"""
