@@ -14,7 +14,7 @@ class IMachine(object):
         self.manager = manager
         self.session = self.manager.get_session(self.mid)
         self.console = None
-        self.mutable = None
+        self.mutable_id = None
 
     def launch(self):
         """Launches stopped or powered off machine
@@ -59,15 +59,15 @@ class IMachine(object):
         """Returns id with IConsole obect"""
         return self.service.ISession_getConsole(self.session)
 
-    def _get_mutable(self):
+    def _get_mutable_id(self):
         """Return mutable ISession"""
-        self.mutable = self.service.ISession_getMachine(self.session)
+        self.mutable_id = self.service.ISession_getMachine(self.session)
 
     def save(self):
         """Save state of running machine"""
         try:
-            self._get_mutable()
-            iprogress = IProgress(self.service.IMachine_saveState(self.mutable),
+            self._get_mutable_id()
+            iprogress = IProgress(self.service.IMachine_saveState(self.mutable_id),
                                   self.service)
             iprogress.wait()
         except zeep.exceptions.Fault as err:
