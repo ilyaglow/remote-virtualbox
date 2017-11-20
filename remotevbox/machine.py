@@ -1,5 +1,7 @@
 """
-IMachine class represents IMachine object
+This module contains two classes:
+* IMachine class represents IMachine object
+* IProgress class represents IProgress object
 """
 
 import logging
@@ -17,13 +19,13 @@ class IMachine(object):
         self.os = None
         self.mutable_id = None
 
-    def launch(self):
+    def launch(self, mode="headless"):
         """Launches stopped or powered off machine
         Returns IProgress"""
         try:
             progress = self.service.IMachine_launchVMProcess(self.mid,
                                                              self.session,
-                                                             "headless",
+                                                             mode,
                                                              "")
             iprogress = IProgress(progress, self.service)
             iprogress.wait()
@@ -32,7 +34,8 @@ class IMachine(object):
             logging.error("Launch operation failed: %s", err)
 
     def lock(self, mode="Shared"):
-        """Locks current machine could be Shared or Write
+        """Locks current machine
+        Could be Shared or Write
         If changing of the machine settings is needed then set mode to Write"""
         try:
             self.service.IMachine_lockMachine(self.mid,
@@ -53,12 +56,48 @@ class IMachine(object):
         self.os = self.service.IMachine_getOSTypeId(self.mid)
         return self.os
 
+    def restore(self, snapshot_name=None):
+        if snapshot_name is None:
+            isnapshot = self._current_snapshot()
+        else:
+            isnapshot = self._get_snapshot(snapshot_name)
+
+        self.lock()
+        self._get_mutable_id()
+
+        iprogress = IProgress(self.service.IMachine_restoreSnapshot(self.mutable_id, isnapshot),
+                              self.service)
+        iprogress.wait()
+        self.unlock()
+
+    def _current_snapshot(self):
+        """Get ISnapshot object for current machine snapshot"""
+        return self.service.IMachine_getCurrentSnapshot(self.mid)
+
+    def _get_snapshot(self, name):
+        """Return ISnapshot object by it's name"""
+        try:
+            return self.service.IMachine_findSnapshot(self.mid, name)
+        except zeep.exceptions.Fault as err:
+            if 'Could not find a snapshost' in err:
+                logging.error("Can't find snapshot %s", name)
+            else:
+                logging.error(err)
+
+    def _snapshot_count(self):
+        """Returns count of machine snapshots"""
+        return self.service.IMachine_getSnapshotCount(self.mid)
+
     def _get_session_state(self):
         """Get state of the current session"""
         return self.service.ISession_getState(self.session)
 
+    def _get_machine_session_state(self):
+        """Get state of the current machine session"""
+        return self.service.IMachine_getSessionState(self.mid)
+
     def _get_state(self):
-        """Get state of machine"""
+        """Get execution state of a machine"""
         return self.service.IMachine_getState(self.mid)
 
     def _get_console(self):
