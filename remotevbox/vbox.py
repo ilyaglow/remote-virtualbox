@@ -41,8 +41,20 @@ class IVirtualBox(object):
 
     def list_machines(self):
         """Lists all machines available"""
-        return [self.service.IMachine_getName(m)
-                for m in self.service.IVirtualBox_getMachines(self.handle)]
+        machines = []
+        for machine in self.service.IVirtualBox_getMachines(self.handle):
+            try:
+                machines.append(self.service.IMachine_getName(machine))
+            except zeep.exceptions.Fault as err:
+                if 'The object functionality is limited' in str(err):
+                    """This error means that something is wrong with iterated machine
+                    medium or settings.
+                    Simply ignore this VM"""
+                    pass
+                else:
+                    logging.error(err)
+
+        return machines
 
     def get_machine(self, name):
         """Returns IMachine"""
