@@ -14,6 +14,7 @@ class IMachine(object):
         self.manager = manager
         self.session = self.manager.get_session(self.mid)
         self.console = None
+        self.os = None
         self.mutable_id = None
 
     def launch(self):
@@ -46,6 +47,11 @@ class IMachine(object):
             self.service.ISession_unlockMachine(self.session)
         except zeep.exceptions.Fault as err:
             logging.error("Unlock operation failed: %s", err)
+
+    def get_os(self):
+        """Get Guest operating system type (user-defined value)"""
+        self.os = self.service.IMachine_getOSTypeId(self.mid)
+        return self.os
 
     def _get_session_state(self):
         """Get state of the current session"""
