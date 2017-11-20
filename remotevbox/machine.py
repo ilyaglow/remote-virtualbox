@@ -4,6 +4,8 @@ This module contains two classes:
 * IProgress class represents IProgress object
 """
 
+from datetime import datetime
+from time import mktime
 import logging
 import zeep.exceptions
 
@@ -56,6 +58,21 @@ class IMachine(object):
         self.os = self.service.IMachine_getOSTypeId(self.mid)
         return self.os
 
+    def coredump(self, filepath, add_time_suffix=False):
+        """Do ELF64 Core dump"""
+        iconsole = self._get_console()
+
+        if iconsole:
+            imdebugger = self.service.IConsole_getDebugger(iconsole)
+
+            if add_time_suffix:
+                filepath = "{}-{}".format(filepath,
+                                          int(mktime(datetime.now().timetuple())))
+
+            self.service.IMachineDebugger_dumpGuestCore(imdebugger,
+                                                        filepath,
+                                                        '')
+
     def restore(self, snapshot_name=None):
         if snapshot_name is None:
             isnapshot = self._current_snapshot()
@@ -102,7 +119,10 @@ class IMachine(object):
 
     def _get_console(self):
         """Returns id with IConsole obect"""
-        return self.service.ISession_getConsole(self.session)
+        if self._get_session_state() == 'Locked':
+            return self.service.ISession_getConsole(self.session)
+        else:
+            logging.error("Session is not locked")
 
     def _get_mutable_id(self):
         """Return mutable ISession"""
