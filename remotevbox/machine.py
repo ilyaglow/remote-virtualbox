@@ -106,7 +106,7 @@ class IMachine(object):
             logging.error("Machine state is not PoweredOff")
 
     def disable_net_trace(self, slot=1):
-        if self._get_state == "PoweredOff":
+        if self._get_state() == "PoweredOff":
             self.lock()
             adapter = INetworkAdapter(self.service, self.mutable_id, slot)
             adapter.disable_trace()
