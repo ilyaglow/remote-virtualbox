@@ -90,8 +90,13 @@ class IMachine(object):
     def discard(self, remove_state_file=True):
         """Discard Saved state to PoweredOff"""
         self.lock()
-        self.service.IMachine_discardSavedState(self.mutable_id,
-                                                remove_state_file)
+        try:
+            self.service.IMachine_discardSavedState(self.mutable_id,
+                                                    remove_state_file)
+            self.unlock()
+        except zeep.exceptions.Fault as err:
+            logging.error("Can't discard state: %s", err)
+            self.unlock()
 
     def enable_net_trace(self, filename, slot=1):
         """Trace network adapter specified by a slot
@@ -102,6 +107,7 @@ class IMachine(object):
             self.lock()
             adapter = INetworkAdapter(self.service, self.mutable_id, slot)
             adapter.enable_trace(filename)
+            self.unlock()
         else:
             logging.error("Machine state is not PoweredOff")
 
@@ -110,6 +116,7 @@ class IMachine(object):
             self.lock()
             adapter = INetworkAdapter(self.service, self.mutable_id, slot)
             adapter.disable_trace()
+            self.unlock()
         else:
             logging.error("Machine state is not PoweredOff")
 
@@ -156,6 +163,12 @@ class IMachine(object):
 
     def save(self):
         """Save state of running machine"""
+        locked = False
+
+        if self._get_session_state() == "Unlocked":
+            self.lock()
+            locked = True
+
         try:
             self._get_mutable_id()
             iprogress = IProgress(self.service.IMachine_saveState(self.mutable_id),
@@ -163,6 +176,9 @@ class IMachine(object):
             iprogress.wait()
         except zeep.exceptions.Fault as err:
             logging.error("Save operation failed: %s", err)
+
+        if locked:
+            self.unlock()
 
     def pause(self):
         """Set machine to pause state"""
