@@ -98,7 +98,7 @@ class IMachine(object):
             logging.error("Can't discard state: %s", err)
             self.unlock()
 
-    def enable_net_trace(self, filename, slot=1):
+    def enable_net_trace(self, filename, slot=0):
         """Trace network adapter specified by a slot
         and dump pcap to specified filename
         Applicable only if state is PoweredOff"""
@@ -107,15 +107,17 @@ class IMachine(object):
             self.lock()
             adapter = INetworkAdapter(self.service, self.mutable_id, slot)
             adapter.enable_trace(filename)
+            self.service.IMachine_saveSettings(self.mutable_id)
             self.unlock()
         else:
             logging.error("Machine state is not PoweredOff")
 
-    def disable_net_trace(self, slot=1):
+    def disable_net_trace(self, slot=0):
         if self._get_state() == "PoweredOff":
             self.lock()
             adapter = INetworkAdapter(self.service, self.mutable_id, slot)
             adapter.disable_trace()
+            self.service.IMachine_saveSettings(self.mutable_id)
             self.unlock()
         else:
             logging.error("Machine state is not PoweredOff")
@@ -180,6 +182,10 @@ class IMachine(object):
         if locked:
             self.unlock()
 
+    def state(self):
+        """Returns machine current state"""
+        return self._get_state()
+
     def pause(self):
         """Set machine to pause state"""
         self.service.IConsole_pause(self.console)
@@ -211,7 +217,7 @@ class IProgress(object):
 
 class INetworkAdapter(object):
     """INetworkAdapter works with selected machine's network adapter"""
-    def __init__(self, service, machine_id, slot=1):
+    def __init__(self, service, machine_id, slot=0):
         self.machine = machine_id
         self.service = service
         self.slot = slot
