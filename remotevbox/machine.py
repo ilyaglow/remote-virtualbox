@@ -186,6 +186,20 @@ class IMachine(object):
         """Returns machine current state"""
         return self._get_state()
 
+    def poweroff(self):
+        """Save virtual machine and poweroff it after"""
+        state = self._get_state()
+
+        if state == "PoweredOff":
+            logging.error("Already powered off")
+            return
+
+        if state == "Running":
+            self.save()
+
+        if self._get_state() == "Saved":
+            self.discard()
+
     def pause(self):
         """Set machine to pause state"""
         self.service.IConsole_pause(self.console)
