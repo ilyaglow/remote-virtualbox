@@ -1,0 +1,13 @@
+language: python
+python:
+- '2.7'
+script:
+- python -c 'import remotevbox'
+deploy:
+  provider: pypi
+  user: ilyaglotov
+  password:
+    secure: XqGX4JL9iDmU3bHyCflAj+4lN3fN22qubbkL3r04GerOKp3qrJWRRor6GHHmfCAGsd++XgUjIp8u9VxMd/f16+I/MHg7nxaH0YwfE9lTH2DFitUcAMTp+AZP+7xjls9ljeUl+nq73IyjG19jIzF5jDYzpWrvjXmKW62ro5xe46D7VzvOwFbksw7TJte6PE1RSF+hNsj6RPkw240PmXWwPKrBQZABlOYLySP4/vdOfHtqphcIpcvG56n6wvHYmhWXv8wmGdQbpY5gL8oaH7LA8aHgNywL21WLR5W5jOl6GSl7E09zPnFvOLmeRG2kBNz3vu5WSfvQddR0pEQfzbqaoDkVQKMtwe2c5VAuFC3YMT06nctQGwo8kgX5uSD0801wXImOTs1pOiOaarEHTu9qFmU8870cI5npjuw0j8Thl4X9+3k+cnmYc8+55PfkDmr3zpZBhGv3uftc9nkFL5N4AsZBgFVhughy2QaD41bC94rDWF2H5BFHLqxT/S9Qa9YzLmqa5nVhTDLBllJ8/1OMouTdkvtLxQlAR2v/6SZA4jv2IFf2Ipdx/d/fspPhFkqcVM+N7wK5tEwZn29QBD0Dl+RQq3A/W1XGh8min6sxisDYfzz8oFKSKDDjkAVf+9ztZIP3WA+RMG/NPdDdIbHYvtRNDFulBGKww8NXMO3OcYg=
+  on:
+    tags: true
+    branch: master
