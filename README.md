@@ -17,13 +17,17 @@ https://www.virtualbox.org/manual/ch09.html#vboxwebsrv-daemon
 
 ## Install
 
+```
+pip install remotevbox --user
+```
+
+### Development version
+
 [Pipenv](https://github.com/kennethreitz/pipenv) is used here:
 
 ```
 pipenv install
 ```
-
-`setup.py` and package on `pypi` will be available soon
 
 ## Usage example
 
