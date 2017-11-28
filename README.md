@@ -1,6 +1,8 @@
 [WIP] Remote VirtualBox
 -----------------------
 
+[![Build Status](https://travis-ci.org/ilyaglow/remote-virtualbox.svg?branch=master)](https://travis-ci.org/ilyaglow/remote-virtualbox)
+
 ## About
 
 This package is intended to be simple and useful abstraction based on [Zeep](https://github.com/mvantellingen/python-zeep) SOAP client.
