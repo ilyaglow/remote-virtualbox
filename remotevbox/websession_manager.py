@@ -2,8 +2,9 @@
 IWebsession_Manager binding
 """
 
-import logging
 import zeep.exceptions
+
+from .exceptions import WrongCredentialsError
 
 
 class IWebsessionManager(object):
@@ -30,7 +31,7 @@ class IWebsessionManager(object):
         try:
             return self.service.IWebsessionManager_logon(user, password)
         except zeep.exceptions.Fault:
-            logging.error("Wrong credentials supplied")
+            raise WrongCredentialsError("Wrong credentials supplied")
 
     def logoff(self):
         """Logs off and destroy all managed object references"""

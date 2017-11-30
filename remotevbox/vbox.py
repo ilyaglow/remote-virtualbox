@@ -4,11 +4,11 @@ IVirtualBox binding
 
 import logging
 import requests.exceptions
-import sys
 import zeep
 
 from .machine import IMachine
 from .websession_manager import IWebsessionManager
+from .exceptions import WebServiceConnectionError, ListMachinesError, FindMachineError
 
 VBOX_SOAP_BINDING = '{http://www.virtualbox.org/}vboxBinding'
 
@@ -33,8 +33,7 @@ class IVirtualBox(object):
             client = zeep.Client(location)
             return client
         except requests.exceptions.ConnectionError:
-            logging.error("Location: {} is not available".format(location))
-            sys.exit(1)
+            raise WebServiceConnectionError("Location: {} is not available".format(location))
 
     def get_session_manager(self):
         return self.manager
@@ -52,7 +51,7 @@ class IVirtualBox(object):
                     Simply ignore this VM"""
                     pass
                 else:
-                    logging.error(err)
+                    raise ListMachinesError(err)
 
         return machines
 
@@ -66,7 +65,7 @@ class IVirtualBox(object):
         try:
             return self.service.IVirtualBox_findMachine(self.handle, name)
         except zeep.exceptions.Fault as e:
-            logging.error(e)
+            raise FindMachineError(e)
 
     def open_machine(self, name):
         """Constructs :class:`IMachine <IMachine>`
