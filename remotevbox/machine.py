@@ -6,8 +6,14 @@ This module contains two classes:
 
 from datetime import datetime
 from time import mktime
-import logging
 import zeep.exceptions
+
+from .exceptions import (
+    MachineLaunchError, MachineLockError, MachineUnlockError,
+    MachineDiscardError, WrongMachineState, MachineSnapshotNX,
+    MachineSaveError, WrongLockState, MachineSnapshotError,
+    ProgressTimeout
+)
 
 
 class IMachine(object):
@@ -33,7 +39,7 @@ class IMachine(object):
             iprogress.wait()
             self.console = self._get_console()
         except zeep.exceptions.Fault as err:
-            logging.error("Launch operation failed: %s", err)
+            raise MachineLaunchError("Launch operation failed: %s", err)
 
     def lock(self, mode="Shared"):
         """Locks current machine
@@ -45,14 +51,14 @@ class IMachine(object):
                                               mode)
             self._get_mutable_id()
         except zeep.exceptions.Fault as err:
-            logging.error("Lock operation failed: %s", err)
+            raise MachineLockError("Lock operation failed: %s", err)
 
     def unlock(self):
         """Unlocks current machine"""
         try:
             self.service.ISession_unlockMachine(self.session)
         except zeep.exceptions.Fault as err:
-            logging.error("Unlock operation failed: %s", err)
+            raise MachineUnlockError("Unlock operation failed: %s", err)
 
     def get_os(self):
         """Get Guest operating system type (user-defined value)"""
@@ -95,7 +101,7 @@ class IMachine(object):
                                                     remove_state_file)
             self.unlock()
         except zeep.exceptions.Fault as err:
-            logging.error("Can't discard state: %s", err)
+            raise MachineDiscardError("Can't discard state: %s", err)
             self.unlock()
 
     def enable_net_trace(self, filename, slot=0):
@@ -110,7 +116,7 @@ class IMachine(object):
             self.service.IMachine_saveSettings(self.mutable_id)
             self.unlock()
         else:
-            logging.error("Machine state is not PoweredOff")
+            raise WrongMachineState("Machine state is not PoweredOff")
 
     def disable_net_trace(self, slot=0):
         if self._get_state() == "PoweredOff":
@@ -120,7 +126,7 @@ class IMachine(object):
             self.service.IMachine_saveSettings(self.mutable_id)
             self.unlock()
         else:
-            logging.error("Machine state is not PoweredOff")
+            raise WrongMachineState("Machine state is not PoweredOff")
 
     def _current_snapshot(self):
         """Get ISnapshot object for current machine snapshot"""
@@ -132,9 +138,9 @@ class IMachine(object):
             return self.service.IMachine_findSnapshot(self.mid, name)
         except zeep.exceptions.Fault as err:
             if 'Could not find a snapshost' in err:
-                logging.error("Can't find snapshot %s", name)
+                raise MachineSnapshotNX("Can't find snapshot %s", name)
             else:
-                logging.error(err)
+                raise MachineSnapshotError(err)
 
     def _snapshot_count(self):
         """Returns count of machine snapshots"""
@@ -157,7 +163,7 @@ class IMachine(object):
         if self._get_session_state() == 'Locked':
             return self.service.ISession_getConsole(self.session)
         else:
-            logging.error("Session is not locked")
+            raise WrongLockState("Session is not locked")
 
     def _get_mutable_id(self):
         """Return mutable ISession"""
@@ -177,7 +183,7 @@ class IMachine(object):
                                   self.service)
             iprogress.wait()
         except zeep.exceptions.Fault as err:
-            logging.error("Save operation failed: %s", err)
+            raise MachineSaveError("Save operation failed: %s", err)
 
         if locked:
             self.unlock()
@@ -191,7 +197,7 @@ class IMachine(object):
         state = self._get_state()
 
         if state == "PoweredOff":
-            logging.error("Already powered off")
+            raise WrongMachineState("Already powered off")
             return
 
         if state == "Running":
@@ -216,7 +222,7 @@ class IProgress(object):
         try:
             self.service.IProgress_waitForCompletion(self.pid, miliseconds)
         except zeep.exceptions.Fault as err:
-            logging.error("Progress wait failed: %s", err)
+            raise ProgressTimeout("Progress wait failed: %s", err)
 
         return self.status()
 
