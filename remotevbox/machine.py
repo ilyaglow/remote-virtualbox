@@ -171,11 +171,8 @@ class IMachine(object):
 
     def save(self):
         """Save state of running machine"""
-        locked = False
-
         if self._get_session_state() == "Unlocked":
             self.lock()
-            locked = True
 
         try:
             self._get_mutable_id()
@@ -185,7 +182,7 @@ class IMachine(object):
         except zeep.exceptions.Fault as err:
             raise MachineSaveError("Save operation failed: %s", err)
 
-        if locked:
+        if self._get_machine_session_state() == "Locked":
             self.unlock()
 
     def state(self):
