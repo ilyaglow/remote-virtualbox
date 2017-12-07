@@ -2,7 +2,6 @@
 IVirtualBox binding
 """
 
-import logging
 import requests.exceptions
 import zeep
 
@@ -15,7 +14,6 @@ VBOX_SOAP_BINDING = '{http://www.virtualbox.org/}vboxBinding'
 
 class IVirtualBox(object):
     def __init__(self, location, user, password):
-        self.log = logging.getLogger()
 
         if not location.endswith('/'):
             location = location + '/'
