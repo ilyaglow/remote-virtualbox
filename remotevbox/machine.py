@@ -81,6 +81,9 @@ class IMachine(object):
                                                         '')
 
     def restore(self, snapshot_name=None):
+        if self.state() == "Running":
+            raise WrongMachineState("Can't restore a running machine")
+
         if snapshot_name is None:
             isnapshot = self._current_snapshot()
         else:
