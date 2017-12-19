@@ -86,6 +86,8 @@ class IMachine(object):
 
         if snapshot_name is None:
             isnapshot = self._current_snapshot()
+            if isnapshot is None:
+                raise MachineSnapshotNX("Machine doesn't have a current snapshot")
         else:
             isnapshot = self._get_snapshot(snapshot_name)
 
