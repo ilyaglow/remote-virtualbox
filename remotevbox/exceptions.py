@@ -64,5 +64,9 @@ class MachineSaveError(Exception):
     """Failed to save virtual machine"""
 
 
+class MachinePowerdownError(Exception):
+    """Failed to power down virtual machine"""
+
+
 class ProgressTimeout(Exception):
     """Progress has been timed out"""

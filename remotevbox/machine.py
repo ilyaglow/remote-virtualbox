@@ -12,7 +12,7 @@ from .exceptions import (
     MachineLaunchError, MachineLockError, MachineUnlockError,
     MachineDiscardError, WrongMachineState, MachineSnapshotNX,
     MachineSaveError, WrongLockState, MachineSnapshotError,
-    ProgressTimeout
+    ProgressTimeout, MachinePowerdownError
 )
 
 
@@ -194,8 +194,8 @@ class IMachine(object):
         """Returns machine current state"""
         return self._get_state()
 
-    def poweroff(self):
-        """Save virtual machine and poweroff it after"""
+    def save_and_discard(self):
+        """Save virtual machine and discard the current state after"""
         state = self._get_state()
 
         if state == "PoweredOff":
@@ -207,6 +207,25 @@ class IMachine(object):
 
         if self._get_state() == "Saved":
             self.discard()
+
+    def poweroff(self):
+        """Power down virtual machine"""
+        if self.state() not in ["Running", "Paused", "Stuck"]:
+            raise WrongMachineState("Can't power down machine in {} state".format(self.state()))
+
+        if self._get_session_state() == "Unlocked":
+            self.lock()
+
+        try:
+            iconsole = self._get_console()
+            iprogress = IProgress(self.service.IConsole_powerDown(iconsole),
+                                  self.service)
+            iprogress.wait()
+        except zeep.exceptions.Fault as err:
+            raise MachinePowerdownError("Power down operation failed: %s", err)
+
+        if self._get_machine_session_state() == "Locked":
+            self.unlock()
 
     def pause(self):
         """Set machine to pause state"""
