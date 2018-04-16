@@ -1,3 +1,5 @@
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Filyaglow%2Fremote-virtualbox.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Filyaglow%2Fremote-virtualbox?ref=badge_shield)
+
 [WIP] Remote VirtualBox
 -----------------------
 
@@ -54,3 +56,7 @@ Usage example
 
 .. |Build Status| image:: https://travis-ci.org/ilyaglow/remote-virtualbox.svg?branch=master
    :target: https://travis-ci.org/ilyaglow/remote-virtualbox
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Filyaglow%2Fremote-virtualbox.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Filyaglow%2Fremote-virtualbox?ref=badge_large)
