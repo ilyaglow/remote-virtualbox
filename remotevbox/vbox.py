@@ -13,7 +13,7 @@ VBOX_SOAP_BINDING = '{http://www.virtualbox.org/}vboxBinding'
 
 
 class IVirtualBox(object):
-    def __init__(self, location, user, password):
+    def __init__(self, location, user="", password=""):
 
         if not location.endswith('/'):
             location = location + '/'

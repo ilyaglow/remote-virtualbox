@@ -68,5 +68,25 @@ class MachinePowerdownError(Exception):
     """Failed to power down virtual machine"""
 
 
+class MachineExtraDataError(Exception):
+    """Error while fetching/Getting machine extradata"""
+
+
+class MachineInfoError(Exception):
+    """Error while getting/setting machine information"""
+
+
+class MachineCloneError(Exception):
+    """Error while cloning a machine"""
+
+
+class MachineSnaphotError(Exception):
+    """Error while snapshoting a machine"""
+
+
+class MachineVrdeInfoError(Exception):
+    """Error while fetching VRDE Server info"""
+
+
 class ProgressTimeout(Exception):
     """Progress has been timed out"""

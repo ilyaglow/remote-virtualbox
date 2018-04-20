@@ -12,7 +12,8 @@ from .exceptions import (
     MachineLaunchError, MachineLockError, MachineUnlockError,
     MachineDiscardError, WrongMachineState, MachineSnapshotNX,
     MachineSaveError, WrongLockState, MachineSnapshotError,
-    ProgressTimeout, MachinePowerdownError
+    ProgressTimeout, MachinePowerdownError, MachineExtraDataError,
+    MachineInfoError, MachineCloneError, MachineSnaphotError, MachineVrdeInfoError
 )
 
 
@@ -30,6 +31,8 @@ class IMachine(object):
     def launch(self, mode="headless"):
         """Launches stopped or powered off machine
         Returns IProgress"""
+        if self._get_state() == "Running":
+            return
         try:
             progress = self.service.IMachine_launchVMProcess(self.mid,
                                                              self.session,
@@ -230,6 +233,113 @@ class IMachine(object):
     def pause(self):
         """Set machine to pause state"""
         self.service.IConsole_pause(self.console)
+
+    def _get_extradata_keys(self):
+        """Returns extradata keys"""
+        progress = None
+        try:
+            keys = self.service.IMachine_getExtraDataKeys(self.mid)
+        except zeep.exceptions.Fault as err:
+            raise MachineExtraDataError("ExtraDataKeys operation failed: %s", err)
+
+        return keys
+
+    def extradata(self, key=None):
+        """Get a specific value or all extradata on this machine.
+           If key = None, returns a dictionnary containing all keys and values.
+           else, return the requested data.
+        """
+        if not key:
+            res = dict()
+            for k in self._get_extradata_keys():
+                res[k] = self.extradata(k)
+            return res
+
+        try:
+            return_value = self.service.IMachine_getExtraData(self.mid,
+                                                              key
+                                                              ) 
+        except zeep.exceptions.Fault as err:
+            raise MachineExtraDataError("Extradata operation failed: %s", err)
+        return return_value
+
+    def set_extradata(self, key, value):
+        """Sets extradata key to value on current machine.
+        """
+        if self._get_session_state() == "Unlocked":
+            self.lock()
+
+        try:
+            m2 = self.service.ISession_getMachine(self.session)
+            self.service.IMachine_setExtraData(m2, key, value)
+        except zeep.exceptions.Fault as err:
+            raise MachineExtraDataError("Extradata operation failed: %s", err)
+
+        if self._get_machine_session_state() == "Locked":
+            self.unlock()
+
+
+    def info(self, key):
+        # TODO : list of fetchable info
+        progress = None
+        try:
+            progress = self.service.__getattr__("IMachine_get"+key)(self.mid)
+        except zeep.exceptions.Fault as err:
+            raise MachineInfoError("Info error appened while trying to get key : %s. Message was : %s", key, err)
+        return progress
+
+    def vrde_info(self):
+        """ Returns information about VRDE server."""
+        info = dict()
+        try:
+            # Get VRDE Server:
+            server = self.service.IMachine_getVRDEServer(self.mid)
+            properties = self.service.IVRDEServer_getVRDEProperties(server)
+            for property_name in properties:
+                value = self.service.IVRDEServer_getVRDEProperty(server, property_name)
+                info[property_name] = value
+        except zeep.exceptions.Fault as err:
+            raise MachineVrdeInfoError("Bad : %s", err)
+        return info
+
+    def take_snapshot(self, target_name, target_description=""):
+        """ Takes a snapshot of the current machine, named after target_name, with target_description as description."""
+        if self._get_session_state() == "Unlocked":
+            self.lock()
+    
+        try:
+            #session = self.manager.get_session(self.manager.handle)
+            m2 = self.service.ISession_getMachine(self.session)
+            result = self.service.IMachine_takeSnapshot(m2, target_name, target_description, False)
+
+        except zeep.exceptions.Fault as err:
+            raise MachineSnaphotError("Unable to take snapshat : %s", err)
+        
+        if self._get_machine_session_state() == "Locked":
+            self.unlock()
+        return result
+
+
+    def linked_clone(self, target_name, snapshot_name , mode="MachineState", options = ["Link"]):
+        """ Creates a linked clone of a machine (needs a snapshot in order to work...) """
+        try:
+            mm = self.service.IVirtualBox_createMachine(self.manager.handle, "", target_name, "", "", "")
+        except zeep.exceptions.Fault as err:
+            raise MachineCreateError("Unable to create machine : %s", err)
+
+        try:
+            snap = self._get_snapshot(snapshot_name)
+            snap_machine_id =self.service.ISnapshot_getMachine(snap)
+
+            clone = self.service.IMachine_cloneTo(snap_machine_id, mm, mode, options)
+
+            iprogress = IProgress(clone, self.service)        
+
+            iprogress.wait()
+        except zeep.exceptions.Fault as err:
+            raise MachineCloneError("Unable to clone machine: %s", err)
+
+        self.manager.service.IVirtualBox_registerMachine(self.manager.handle, mm)
 
 
 class IProgress(object):
