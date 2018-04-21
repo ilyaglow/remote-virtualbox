@@ -1,7 +1,7 @@
-[WIP] Remote VirtualBox
+Remote VirtualBox
 -----------------------
 
-|Build Status|
+|Build Status| |Black Indicator|
 
 About
 -----
@@ -54,3 +54,5 @@ Usage example
 
 .. |Build Status| image:: https://travis-ci.org/ilyaglow/remote-virtualbox.svg?branch=master
    :target: https://travis-ci.org/ilyaglow/remote-virtualbox
+.. |Black Indicator| image:: https://img.shields.io/badge/code%20style-black-000000.svg
+   :target: https://github.com/ambv/black

@@ -11,6 +11,7 @@ class IWebsessionManager(object):
     """
     IWebsessionManager retrieves handle and current session
     """
+
     def __init__(self, service, user, password):
         self.service = service
         self.handle = self.login(user, password)
@@ -30,6 +31,7 @@ class IWebsessionManager(object):
         """
         try:
             return self.service.IWebsessionManager_logon(user, password)
+
         except zeep.exceptions.Fault:
             raise WrongCredentialsError("Wrong credentials supplied")
 

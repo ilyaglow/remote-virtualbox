@@ -9,16 +9,28 @@ from time import mktime
 import zeep.exceptions
 
 from .exceptions import (
-    MachineLaunchError, MachineLockError, MachineUnlockError,
-    MachineDiscardError, WrongMachineState, MachineSnapshotNX,
-    MachineSaveError, WrongLockState, MachineSnapshotError,
-    ProgressTimeout, MachinePowerdownError, MachineExtraDataError,
-    MachineInfoError, MachineCloneError, MachineSnaphotError, MachineVrdeInfoError
+    MachineLaunchError,
+    MachineLockError,
+    MachineUnlockError,
+    MachineDiscardError,
+    WrongMachineState,
+    MachineSnapshotNX,
+    MachineSaveError,
+    WrongLockState,
+    MachineSnapshotError,
+    ProgressTimeout,
+    MachinePowerdownError,
+    MachineExtraDataError,
+    MachineInfoError,
+    MachineCloneError,
+    MachineSnaphotError,
+    MachineVrdeInfoError,
 )
 
 
 class IMachine(object):
     """IMachine constructs object with service, manager and id"""
+
     def __init__(self, service, manager, mid):
         self.mid = mid
         self.service = service
@@ -33,11 +45,11 @@ class IMachine(object):
         Returns IProgress"""
         if self._get_state() == "Running":
             return
+
         try:
-            progress = self.service.IMachine_launchVMProcess(self.mid,
-                                                             self.session,
-                                                             mode,
-                                                             "")
+            progress = self.service.IMachine_launchVMProcess(
+                self.mid, self.session, mode, ""
+            )
             iprogress = IProgress(progress, self.service)
             iprogress.wait()
             self.console = self._get_console()
@@ -49,9 +61,7 @@ class IMachine(object):
         Could be Shared or Write
         If changing of the machine settings is needed then set mode to Write"""
         try:
-            self.service.IMachine_lockMachine(self.mid,
-                                              self.session,
-                                              mode)
+            self.service.IMachine_lockMachine(self.mid, self.session, mode)
             self._get_mutable_id()
         except zeep.exceptions.Fault as err:
             raise MachineLockError("Lock operation failed: %s", err)
@@ -76,12 +86,11 @@ class IMachine(object):
             imdebugger = self.service.IConsole_getDebugger(iconsole)
 
             if add_time_suffix:
-                filepath = "{}-{}".format(filepath,
-                                          int(mktime(datetime.now().timetuple())))
+                filepath = "{}-{}".format(
+                    filepath, int(mktime(datetime.now().timetuple()))
+                )
 
-            self.service.IMachineDebugger_dumpGuestCore(imdebugger,
-                                                        filepath,
-                                                        '')
+            self.service.IMachineDebugger_dumpGuestCore(imdebugger, filepath, "")
 
     def restore(self, snapshot_name=None):
         if self.state() == "Running":
@@ -91,13 +100,16 @@ class IMachine(object):
             isnapshot = self._current_snapshot()
             if isnapshot is None:
                 raise MachineSnapshotNX("Machine doesn't have a current snapshot")
+
         else:
             isnapshot = self._get_snapshot(snapshot_name)
 
         self.lock()
 
-        iprogress = IProgress(self.service.IMachine_restoreSnapshot(self.mutable_id, isnapshot),
-                              self.service)
+        iprogress = IProgress(
+            self.service.IMachine_restoreSnapshot(self.mutable_id, isnapshot),
+            self.service,
+        )
         iprogress.wait()
         self.unlock()
 
@@ -105,11 +117,11 @@ class IMachine(object):
         """Discard Saved state to PoweredOff"""
         self.lock()
         try:
-            self.service.IMachine_discardSavedState(self.mutable_id,
-                                                    remove_state_file)
+            self.service.IMachine_discardSavedState(self.mutable_id, remove_state_file)
             self.unlock()
         except zeep.exceptions.Fault as err:
             raise MachineDiscardError("Can't discard state: %s", err)
+
             self.unlock()
 
     def enable_net_trace(self, filename, slot=0):
@@ -144,9 +156,11 @@ class IMachine(object):
         """Return ISnapshot object by it's name"""
         try:
             return self.service.IMachine_findSnapshot(self.mid, name)
+
         except zeep.exceptions.Fault as err:
-            if 'Could not find a snapshost' in err:
+            if "Could not find a snapshost" in err:
                 raise MachineSnapshotNX("Can't find snapshot %s", name)
+
             else:
                 raise MachineSnapshotError(err)
 
@@ -168,8 +182,9 @@ class IMachine(object):
 
     def _get_console(self):
         """Returns id with IConsole obect"""
-        if self._get_session_state() == 'Locked':
+        if self._get_session_state() == "Locked":
             return self.service.ISession_getConsole(self.session)
+
         else:
             raise WrongLockState("Session is not locked")
 
@@ -184,8 +199,9 @@ class IMachine(object):
 
         try:
             self._get_mutable_id()
-            iprogress = IProgress(self.service.IMachine_saveState(self.mutable_id),
-                                  self.service)
+            iprogress = IProgress(
+                self.service.IMachine_saveState(self.mutable_id), self.service
+            )
             iprogress.wait()
         except zeep.exceptions.Fault as err:
             raise MachineSaveError("Save operation failed: %s", err)
@@ -203,6 +219,7 @@ class IMachine(object):
 
         if state == "PoweredOff":
             raise WrongMachineState("Already powered off")
+
             return
 
         if state == "Running":
@@ -214,15 +231,18 @@ class IMachine(object):
     def poweroff(self):
         """Power down virtual machine"""
         if self.state() not in ["Running", "Paused", "Stuck"]:
-            raise WrongMachineState("Can't power down machine in {} state".format(self.state()))
+            raise WrongMachineState(
+                "Can't power down machine in {} state".format(self.state())
+            )
 
         if self._get_session_state() == "Unlocked":
             self.lock()
 
         try:
             iconsole = self._get_console()
-            iprogress = IProgress(self.service.IConsole_powerDown(iconsole),
-                                  self.service)
+            iprogress = IProgress(
+                self.service.IConsole_powerDown(iconsole), self.service
+            )
             iprogress.wait()
         except zeep.exceptions.Fault as err:
             raise MachinePowerdownError("Power down operation failed: %s", err)
@@ -256,11 +276,10 @@ class IMachine(object):
             return res
 
         try:
-            return_value = self.service.IMachine_getExtraData(self.mid,
-                                                              key
-                                                              ) 
+            return_value = self.service.IMachine_getExtraData(self.mid, key)
         except zeep.exceptions.Fault as err:
             raise MachineExtraDataError("Extradata operation failed: %s", err)
+
         return return_value
 
     def set_extradata(self, key, value):
@@ -278,14 +297,18 @@ class IMachine(object):
         if self._get_machine_session_state() == "Locked":
             self.unlock()
 
-
     def info(self, key):
         # TODO : list of fetchable info
         progress = None
         try:
-            progress = self.service.__getattr__("IMachine_get"+key)(self.mid)
+            progress = self.service.__getattr__("IMachine_get" + key)(self.mid)
         except zeep.exceptions.Fault as err:
-            raise MachineInfoError("Info error appened while trying to get key : %s. Message was : %s", key, err)
+            raise MachineInfoError(
+                "Info error appened while trying to get key : %s. Message was : %s",
+                key,
+                err,
+            )
+
         return progress
 
     def vrde_info(self):
@@ -300,40 +323,46 @@ class IMachine(object):
                 info[property_name] = value
         except zeep.exceptions.Fault as err:
             raise MachineVrdeInfoError("Bad : %s", err)
+
         return info
 
     def take_snapshot(self, target_name, target_description=""):
         """ Takes a snapshot of the current machine, named after target_name, with target_description as description."""
         if self._get_session_state() == "Unlocked":
             self.lock()
-    
+
         try:
-            #session = self.manager.get_session(self.manager.handle)
+            # session = self.manager.get_session(self.manager.handle)
             m2 = self.service.ISession_getMachine(self.session)
-            result = self.service.IMachine_takeSnapshot(m2, target_name, target_description, False)
+            result = self.service.IMachine_takeSnapshot(
+                m2, target_name, target_description, False
+            )
 
         except zeep.exceptions.Fault as err:
             raise MachineSnaphotError("Unable to take snapshat : %s", err)
-        
+
         if self._get_machine_session_state() == "Locked":
             self.unlock()
         return result
 
-
-    def linked_clone(self, target_name, snapshot_name , mode="MachineState", options = ["Link"]):
+    def linked_clone(
+        self, target_name, snapshot_name, mode="MachineState", options=["Link"]
+    ):
         """ Creates a linked clone of a machine (needs a snapshot in order to work...) """
         try:
-            mm = self.service.IVirtualBox_createMachine(self.manager.handle, "", target_name, "", "", "")
+            mm = self.service.IVirtualBox_createMachine(
+                self.manager.handle, "", target_name, "", "", ""
+            )
         except zeep.exceptions.Fault as err:
             raise MachineCreateError("Unable to create machine : %s", err)
 
         try:
             snap = self._get_snapshot(snapshot_name)
-            snap_machine_id =self.service.ISnapshot_getMachine(snap)
+            snap_machine_id = self.service.ISnapshot_getMachine(snap)
 
             clone = self.service.IMachine_cloneTo(snap_machine_id, mm, mode, options)
 
-            iprogress = IProgress(clone, self.service)        
+            iprogress = IProgress(clone, self.service)
 
             iprogress.wait()
         except zeep.exceptions.Fault as err:
@@ -344,6 +373,7 @@ class IMachine(object):
 
 class IProgress(object):
     """IProgress constructs object to deal with waiting"""
+
     def __init__(self, progress_id, service):
         self.pid = progress_id
         self.service = service
@@ -368,6 +398,7 @@ class IProgress(object):
 
 class INetworkAdapter(object):
     """INetworkAdapter works with selected machine's network adapter"""
+
     def __init__(self, service, machine_id, slot=0):
         self.machine = machine_id
         self.service = service
@@ -375,8 +406,7 @@ class INetworkAdapter(object):
         self.adapter = self._get_adapter()
 
     def _get_adapter(self):
-        return self.service.IMachine_getNetworkAdapter(self.machine,
-                                                       self.slot)
+        return self.service.IMachine_getNetworkAdapter(self.machine, self.slot)
 
     def trace_enabled(self):
         return self.service.INetworkAdapter_getTraceEnabled(self.adapter)
