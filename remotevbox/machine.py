@@ -25,6 +25,10 @@ from .exceptions import (
     MachineCloneError,
     MachineSnaphotError,
     MachineVrdeInfoError,
+    MachineEnableNetTraceError,
+    MachineDisableNetTraceError,
+    MachineSetTraceFileError,
+    MachinePauseError,
 )
 
 
@@ -52,9 +56,8 @@ class IMachine(object):
             )
             iprogress = IProgress(progress, self.service)
             iprogress.wait()
-            self.console = self._get_console()
         except zeep.exceptions.Fault as err:
-            raise MachineLaunchError("Launch operation failed: %s", err)
+            raise MachineLaunchError("Launch operation failed: {}".format(err.message))
 
     def lock(self, mode="Shared"):
         """Locks current machine
@@ -64,14 +67,14 @@ class IMachine(object):
             self.service.IMachine_lockMachine(self.mid, self.session, mode)
             self._get_mutable_id()
         except zeep.exceptions.Fault as err:
-            raise MachineLockError("Lock operation failed: %s", err)
+            raise MachineLockError("Lock operation failed: {}".format(err.message))
 
     def unlock(self):
         """Unlocks current machine"""
         try:
             self.service.ISession_unlockMachine(self.session)
         except zeep.exceptions.Fault as err:
-            raise MachineUnlockError("Unlock operation failed: %s", err)
+            raise MachineUnlockError("Unlock operation failed: {}".format(err.message))
 
     def get_os(self):
         """Get Guest operating system type (user-defined value)"""
@@ -80,17 +83,20 @@ class IMachine(object):
 
     def coredump(self, filepath, add_time_suffix=False):
         """Do ELF64 Core dump"""
-        iconsole = self._get_console()
+        try:
+            iconsole = self._get_console()
 
-        if iconsole:
-            imdebugger = self.service.IConsole_getDebugger(iconsole)
+            if iconsole:
+                imdebugger = self.service.IConsole_getDebugger(iconsole)
 
-            if add_time_suffix:
-                filepath = "{}-{}".format(
-                    filepath, int(mktime(datetime.now().timetuple()))
-                )
+                if add_time_suffix:
+                    filepath = "{}-{}".format(
+                        filepath, int(mktime(datetime.now().timetuple()))
+                    )
 
-            self.service.IMachineDebugger_dumpGuestCore(imdebugger, filepath, "")
+                self.service.IMachineDebugger_dumpGuestCore(imdebugger, filepath, "")
+        except zeep.exceptions.Fault as err:
+            raise MachineCoredumpError("Coredump of guest's memory failed: {}".format(err.message))
 
     def restore(self, snapshot_name=None):
         if self.state() == "Running":
@@ -120,7 +126,7 @@ class IMachine(object):
             self.service.IMachine_discardSavedState(self.mutable_id, remove_state_file)
             self.unlock()
         except zeep.exceptions.Fault as err:
-            raise MachineDiscardError("Can't discard state: %s", err)
+            raise MachineDiscardError("Can't discard state: {}".format(err.message))
 
             self.unlock()
 
@@ -159,7 +165,7 @@ class IMachine(object):
 
         except zeep.exceptions.Fault as err:
             if "Could not find a snapshost" in err:
-                raise MachineSnapshotNX("Can't find snapshot %s", name)
+                raise MachineSnapshotNX("Can't find snapshot {}".format(name))
 
             else:
                 raise MachineSnapshotError(err)
@@ -181,7 +187,7 @@ class IMachine(object):
         return self.service.IMachine_getState(self.mid)
 
     def _get_console(self):
-        """Returns id with IConsole obect"""
+        """Returns id with IConsole object"""
         if self._get_session_state() == "Locked":
             return self.service.ISession_getConsole(self.session)
 
@@ -204,7 +210,7 @@ class IMachine(object):
             )
             iprogress.wait()
         except zeep.exceptions.Fault as err:
-            raise MachineSaveError("Save operation failed: %s", err)
+            raise MachineSaveError("Save operation failed: {}".format(err.message))
 
         if self._get_machine_session_state() == "Locked":
             self.unlock()
@@ -245,14 +251,18 @@ class IMachine(object):
             )
             iprogress.wait()
         except zeep.exceptions.Fault as err:
-            raise MachinePowerdownError("Power down operation failed: %s", err)
+            raise MachinePowerdownError("Power down operation failed: {}".format(err.message))
 
         if self._get_machine_session_state() == "Locked":
             self.unlock()
 
     def pause(self):
         """Set machine to pause state"""
-        self.service.IConsole_pause(self.console)
+        try:
+            console = self._get_console()
+            self.service.IConsole_pause(console)
+        except zeep.exceptions.Fault as err:
+            raise MachinePauseError("Pause operation failed: {}".format(err.message))
 
     def _get_extradata_keys(self):
         """Returns extradata keys"""
@@ -260,7 +270,7 @@ class IMachine(object):
         try:
             keys = self.service.IMachine_getExtraDataKeys(self.mid)
         except zeep.exceptions.Fault as err:
-            raise MachineExtraDataError("ExtraDataKeys operation failed: %s", err)
+            raise MachineExtraDataError("ExtraDataKeys operation failed: {}".format(err.message))
 
         return keys
 
@@ -278,7 +288,7 @@ class IMachine(object):
         try:
             return_value = self.service.IMachine_getExtraData(self.mid, key)
         except zeep.exceptions.Fault as err:
-            raise MachineExtraDataError("Extradata operation failed: %s", err)
+            raise MachineExtraDataError("Extradata operation failed: {}".format(err.message))
 
         return return_value
 
@@ -292,7 +302,7 @@ class IMachine(object):
             m2 = self.service.ISession_getMachine(self.session)
             self.service.IMachine_setExtraData(m2, key, value)
         except zeep.exceptions.Fault as err:
-            raise MachineExtraDataError("Extradata operation failed: %s", err)
+            raise MachineExtraDataError("Extradata operation failed: {}".format(err.message))
 
         if self._get_machine_session_state() == "Locked":
             self.unlock()
@@ -304,9 +314,10 @@ class IMachine(object):
             progress = self.service.__getattr__("IMachine_get" + key)(self.mid)
         except zeep.exceptions.Fault as err:
             raise MachineInfoError(
-                "Info error appened while trying to get key : %s. Message was : %s",
-                key,
-                err,
+                "Info error happened while trying to get key: {}. Message was: {}".format(
+                    key,
+                    err.message,
+                )
             )
 
         return progress
@@ -322,7 +333,7 @@ class IMachine(object):
                 value = self.service.IVRDEServer_getVRDEProperty(server, property_name)
                 info[property_name] = value
         except zeep.exceptions.Fault as err:
-            raise MachineVrdeInfoError("Bad : %s", err)
+            raise MachineVrdeInfoError("Failed to return information about VRDE server: {}".format(err.message))
 
         return info
 
@@ -339,7 +350,7 @@ class IMachine(object):
             )
 
         except zeep.exceptions.Fault as err:
-            raise MachineSnaphotError("Unable to take snapshat : %s", err)
+            raise MachineSnaphotError("Unable to take snapshot: {}".format(err.message))
 
         if self._get_machine_session_state() == "Locked":
             self.unlock()
@@ -354,7 +365,7 @@ class IMachine(object):
                 self.manager.handle, "", target_name, "", "", ""
             )
         except zeep.exceptions.Fault as err:
-            raise MachineCreateError("Unable to create machine : %s", err)
+            raise MachineCreateError("Unable to create machine: {}".format(err.message))
 
         try:
             snap = self._get_snapshot(snapshot_name)
@@ -363,10 +374,9 @@ class IMachine(object):
             clone = self.service.IMachine_cloneTo(snap_machine_id, mm, mode, options)
 
             iprogress = IProgress(clone, self.service)
-
             iprogress.wait()
         except zeep.exceptions.Fault as err:
-            raise MachineCloneError("Unable to clone machine: %s", err)
+            raise MachineCloneError("Unable to clone machine: {}".format(err.message))
 
         self.manager.service.IVirtualBox_registerMachine(self.manager.handle, mm)
 
@@ -383,7 +393,7 @@ class IProgress(object):
         try:
             self.service.IProgress_waitForCompletion(self.pid, miliseconds)
         except zeep.exceptions.Fault as err:
-            raise ProgressTimeout("Progress wait failed: %s", err)
+            raise ProgressTimeout("Progress wait failed: {}".format(err.message))
 
         return self.status()
 
@@ -412,8 +422,18 @@ class INetworkAdapter(object):
         return self.service.INetworkAdapter_getTraceEnabled(self.adapter)
 
     def enable_trace(self, filename):
-        self.service.INetworkAdapter_setTraceEnabled(self.adapter, True)
-        self.service.INetworkAdapter_setTraceFile(self.adapter, filename)
+        try:
+            self.service.INetworkAdapter_setTraceEnabled(self.adapter, True)
+        except zeep.exceptions.Fault as err:
+            raise MachineEnableNetTraceError("Failed to enable net trace: {}".format(err.message))
+
+        try:
+            self.service.INetworkAdapter_setTraceFile(self.adapter, filename)
+        except zeep.exceptions.Fault as err:
+            raise MachineSetTraceFileError("Failed to set pcap trace file: {}".format(err.message))
 
     def disable_trace(self):
-        self.service.INetworkAdapter_setTraceEnabled(self.adapter, False)
+        try:
+            self.service.INetworkAdapter_setTraceEnabled(self.adapter, False)
+        except zeep.exceptions.Fault as err:
+            raise MachineDisableNetTraceError("Failed to disable net trace: {}".format(err.message))

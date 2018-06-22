@@ -90,3 +90,19 @@ class MachineVrdeInfoError(Exception):
 
 class ProgressTimeout(Exception):
     """Progress has been timed out"""
+
+
+class MachineEnableNetTraceError(Exception):
+    """Failed to enable machine network tracing"""
+
+
+class MachineDisableNetTraceError(Exception):
+    """Failed to disable machine network tracing"""
+
+
+class MachineSetTraceFileError(Exception):
+    """Failed to set a pcap trace file"""
+
+
+class MachinePauseError(Exception):
+    """Failed to pause machine"""
