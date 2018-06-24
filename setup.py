@@ -6,7 +6,7 @@ from setuptools import setup
 
 setup(
     name="remotevbox",
-    version="0.1.4",
+    version="0.1.5",
     author="Ilya Glotov",
     author_email="ilya@ilyaglotov.com",
     packages=["remotevbox"],
