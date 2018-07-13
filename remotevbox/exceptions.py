@@ -106,3 +106,11 @@ class MachineSetTraceFileError(Exception):
 
 class MachinePauseError(Exception):
     """Failed to pause machine"""
+
+
+class MachineCoredumpError(Exception):
+    """Failed to take machine core dump"""
+
+
+class MachineCreateError(Exception):
+    """Failed to create machine"""
