@@ -7,7 +7,11 @@ import zeep
 
 from .machine import IMachine
 from .websession_manager import IWebsessionManager
-from .exceptions import WebServiceConnectionError, ListMachinesError, FindMachineError
+from .exceptions import (
+    FindMachineError,
+    ListMachinesError,
+    WebServiceConnectionError,
+)
 
 VBOX_SOAP_BINDING = "{http://www.virtualbox.org/}vboxBinding"
 
