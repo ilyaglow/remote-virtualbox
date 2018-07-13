@@ -115,7 +115,9 @@ class IMachine(object):
 
                 self.service.IMachineDebugger_dumpGuestCore(imdebugger, filepath, "")
         except zeep.exceptions.Fault as err:
-            raise MachineCoredumpError("Coredump of guest's memory failed: {}".format(err.message))
+            raise MachineCoredumpError(
+                "Coredump of guest's memory failed: {}".format(err.message)
+            )
 
     def restore(self, snapshot_name=None):
         if self.state() == self.RUNNING:
@@ -270,7 +272,9 @@ class IMachine(object):
             )
             iprogress.wait()
         except zeep.exceptions.Fault as err:
-            raise MachinePowerdownError("Power down operation failed: {}".format(err.message))
+            raise MachinePowerdownError(
+                "Power down operation failed: {}".format(err.message)
+            )
 
         if self._get_machine_session_state() == self.LOCKED and self._get_session_state() == self.LOCKED:
             self.unlock()
@@ -288,7 +292,9 @@ class IMachine(object):
         try:
             keys = self.service.IMachine_getExtraDataKeys(self.mid)
         except zeep.exceptions.Fault as err:
-            raise MachineExtraDataError("ExtraDataKeys operation failed: {}".format(err.message))
+            raise MachineExtraDataError(
+                "ExtraDataKeys operation failed: {}".format(err.message)
+            )
 
         return keys
 
@@ -306,7 +312,9 @@ class IMachine(object):
         try:
             return_value = self.service.IMachine_getExtraData(self.mid, key)
         except zeep.exceptions.Fault as err:
-            raise MachineExtraDataError("Extradata operation failed: {}".format(err.message))
+            raise MachineExtraDataError(
+                "Extradata operation failed: {}".format(err.message)
+            )
 
         return return_value
 
@@ -320,7 +328,9 @@ class IMachine(object):
             m2 = self.service.ISession_getMachine(self.session)
             self.service.IMachine_setExtraData(m2, key, value)
         except zeep.exceptions.Fault as err:
-            raise MachineExtraDataError("Extradata operation failed: {}".format(err.message))
+            raise MachineExtraDataError(
+                "Extradata operation failed: {}".format(err.message)
+            )
 
         if self._get_machine_session_state() == self.LOCKED:
             self.unlock()
@@ -333,8 +343,7 @@ class IMachine(object):
         except zeep.exceptions.Fault as err:
             raise MachineInfoError(
                 "Info error happened while trying to get key: {}. Message was: {}".format(
-                    key,
-                    err.message,
+                    key, err.message
                 )
             )
 
@@ -351,7 +360,9 @@ class IMachine(object):
                 value = self.service.IVRDEServer_getVRDEProperty(server, property_name)
                 info[property_name] = value
         except zeep.exceptions.Fault as err:
-            raise MachineVrdeInfoError("Failed to return information about VRDE server: {}".format(err.message))
+            raise MachineVrdeInfoError(
+                "Failed to return information about VRDE server: {}".format(err.message)
+            )
 
         return info
 
@@ -443,15 +454,21 @@ class INetworkAdapter(object):
         try:
             self.service.INetworkAdapter_setTraceEnabled(self.adapter, True)
         except zeep.exceptions.Fault as err:
-            raise MachineEnableNetTraceError("Failed to enable net trace: {}".format(err.message))
+            raise MachineEnableNetTraceError(
+                "Failed to enable net trace: {}".format(err.message)
+            )
 
         try:
             self.service.INetworkAdapter_setTraceFile(self.adapter, filename)
         except zeep.exceptions.Fault as err:
-            raise MachineSetTraceFileError("Failed to set pcap trace file: {}".format(err.message))
+            raise MachineSetTraceFileError(
+                "Failed to set pcap trace file: {}".format(err.message)
+            )
 
     def disable_trace(self):
         try:
             self.service.INetworkAdapter_setTraceEnabled(self.adapter, False)
         except zeep.exceptions.Fault as err:
-            raise MachineDisableNetTraceError("Failed to disable net trace: {}".format(err.message))
+            raise MachineDisableNetTraceError(
+                "Failed to disable net trace: {}".format(err.message)
+            )
