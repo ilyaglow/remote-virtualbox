@@ -44,11 +44,15 @@ Usage example
 .. code:: python
 
         >>> import remotevbox
-        >>> vbox = remotevbox.connect("https://127.0.0.1:18083", "vbox", "yourpassphrase")
+        >>> vbox = remotevbox.connect("http://127.0.0.1:18083", "vbox", "yourpassphrase")
         >>> vbox.get_version()
-        '5.1.30'
+        '6.1.2'
         >>> machine = vbox.get_machine("Windows10")
         >>> machine.launch()
+        >>> screenshot_data = machine.take_screenshot_to_bytes()
+        >>> fp = open('screenshot.png', 'wb')
+        >>> fp.write(screenshot_data)
+        >>> fp.close()
         >>> machine.save()
         >>> vbox.disconnect()
 
