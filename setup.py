@@ -6,7 +6,7 @@ from setuptools import setup
 
 setup(
     name="remotevbox",
-    version="0.2.0",
+    version="0.3.0",
     author="Ilya Glotov",
     author_email="ilya@ilyaglotov.com",
     packages=["remotevbox"],
@@ -14,7 +14,7 @@ setup(
     license="LICENSE",
     description="Simple client library to work with VirtualBox remotely",
     long_description=open("README.rst").read(),
-    install_requires=["zeep >= 2.4.0"],
+    install_requires=["zeep >= 2.4.0", "semver >= 2.9.0"],
     keywords="virtualbox soap remote",
     python_requires=">=2.7",
 )
