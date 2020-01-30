@@ -4,10 +4,12 @@ This module contains two classes:
 * IProgress class represents IProgress object
 * INetworkAdapter class represents INetworkAdapter object
 """
-
+from base64 import b64decode
 from datetime import datetime
 from time import mktime
+
 import zeep.exceptions
+import semver
 
 from .exceptions import (
     MachineCloneError,
@@ -54,7 +56,7 @@ class IMachine(object):
     HEADLESS = "headless"
     GUI = "gui"
 
-    def __init__(self, service, manager, mid):
+    def __init__(self, service, manager, mid, vbox_version="6.1.0"):
         self.mid = mid
         self.service = service
         self.manager = manager
@@ -62,6 +64,7 @@ class IMachine(object):
         self.console = None
         self.os = None
         self.mutable_id = None
+        self.vbox_version = vbox_version
 
     def launch(self, mode="headless"):
         """Launches stopped or powered off machine
@@ -70,9 +73,14 @@ class IMachine(object):
             return
 
         try:
-            progress = self.service.IMachine_launchVMProcess(
-                self.mid, self.session, mode, ""
-            )
+            if semver.compare(self.vbox_version, "6.1.0") == -1:
+                progress = self.service.IMachine_launchVMProcess(
+                    self.mid, self.session, mode, "",
+                )
+            else:
+                progress = self.service.IMachine_launchVMProcess(
+                    self.mid, self.session, mode,
+                )
             iprogress = IProgress(progress, self.service)
             iprogress.wait()
         except zeep.exceptions.Fault as err:
@@ -276,7 +284,10 @@ class IMachine(object):
                 "Power down operation failed: {}".format(err.message)
             )
 
-        if self._get_machine_session_state() == self.LOCKED and self._get_session_state() == self.LOCKED:
+        if (
+            self._get_machine_session_state() == self.LOCKED
+            and self._get_session_state() == self.LOCKED
+        ):
             self.unlock()
 
     def pause(self):
@@ -408,6 +419,27 @@ class IMachine(object):
             raise MachineCloneError("Unable to clone machine: {}".format(err.message))
 
         self.manager.service.IVirtualBox_registerMachine(self.manager.handle, mm)
+
+    def get_screen_resolution(self, screen_number=0):
+        iconsole = self._get_console()
+        display = self.service.IConsole_getDisplay(iconsole)
+        return self.service.IDisplay_getScreenResolution(display, screen_number)
+
+    def take_screenshot_to_bytes(self, screen_number=0, image_format="PNG"):
+        """Return the screenshot as an image.
+        The image size is 1:1 with the screen size, by default is PNG.
+        """
+        iconsole = self._get_console()
+        display = self.service.IConsole_getDisplay(iconsole)
+        resolution = self.get_screen_resolution(screen_number)
+        image_data = self.service.IDisplay_takeScreenShotToArray(
+            display,
+            screen_number,
+            resolution["width"],
+            resolution["height"],
+            image_format,
+        )
+        return b64decode(image_data)
 
 
 class IProgress(object):

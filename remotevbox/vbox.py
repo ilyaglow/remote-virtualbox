@@ -7,13 +7,12 @@ import zeep
 
 from .machine import IMachine
 from .websession_manager import IWebsessionManager
-from .exceptions import (FindMachineError, ListMachinesError, WebServiceConnectionError)
+from .exceptions import FindMachineError, ListMachinesError, WebServiceConnectionError
 
 VBOX_SOAP_BINDING = "{http://www.virtualbox.org/}vboxBinding"
 
 
 class IVirtualBox(object):
-
     def __init__(self, location, user="", password=""):
 
         if not location.endswith("/"):
@@ -25,6 +24,7 @@ class IVirtualBox(object):
         self.manager = IWebsessionManager(self.service, user, password)
 
         self.handle = self.manager.handle
+        self.version = self.get_version()
 
     def get_client(self, location):
         try:
@@ -59,7 +59,7 @@ class IVirtualBox(object):
     def get_machine(self, name):
         """Returns IMachine"""
         mid = self.find_machine(name)
-        return IMachine(self.service, self.manager, mid)
+        return IMachine(self.service, self.manager, mid, vbox_version=self.version)
 
     def find_machine(self, name):
         """Returns virtual machine identificator by it's name"""
