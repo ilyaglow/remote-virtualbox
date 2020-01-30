@@ -9,6 +9,9 @@ install:
 script:
   - python -c 'import remotevbox'
 
+before_deploy:
+  - rm -rf dist Pipfile.lock remotevbox.egg-info
+
 deploy:
   provider: pypi
   user: ilyaglotov
