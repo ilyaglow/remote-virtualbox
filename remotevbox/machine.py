@@ -441,6 +441,12 @@ class IMachine(object):
         )
         return b64decode(image_data)
 
+    def sendCAD(self):
+        """Send Ctrl + Alt + Canc to the machine."""
+        iconsole = self._get_console()
+        keyboard = self.service.IConsole_getKeyboard(iconsole)
+        self.service.IKeyboard_putCAD(keyboard)
+
 
 class IProgress(object):
     """IProgress constructs object to deal with waiting"""
