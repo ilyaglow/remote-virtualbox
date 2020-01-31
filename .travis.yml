@@ -3,10 +3,14 @@ python:
   - '2.7'
 
 install:
-  - pip install zeep
+  - pip install pipenv
+  - pipenv install
 
 script:
   - python -c 'import remotevbox'
+
+before_deploy:
+  - rm -rf dist Pipfile.lock remotevbox.egg-info
 
 deploy:
   provider: pypi
