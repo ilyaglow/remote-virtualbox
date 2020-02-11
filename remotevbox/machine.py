@@ -447,6 +447,42 @@ class IMachine(object):
         keyboard = self.service.IConsole_getKeyboard(iconsole)
         self.service.IKeyboard_putCAD(keyboard)
 
+    def put_scancodes(self, scancodes):
+        """Send a list of keyboard scancodes to the machine.
+
+        The mapping between scancodes and character depends on the layout
+        and the OS.
+
+        For most cases the USB HID interface is easier to use.
+        """
+        iconsole = self._get_console()
+        keyboard = self.service.IConsole_getKeyboard(iconsole)
+        self.service.IKeyboard_putScancodes(keyboard, scancodes)
+
+    def put_usagecode(self, code, page, release=False):
+        """Send a USB HID usage code.
+
+        When referring to keyboard, this signals that a key is being
+        pressed. Use release=True to mark the end of the key press.
+
+        Refer to the USB documentation for the codes, since this API has a
+        very wide scope.
+        """
+        iconsole = self._get_console()
+        keyboard = self.service.IConsole_getKeyboard(iconsole)
+        self.service.IKeyboard_putUsageCode(keyboard, code, page, release)
+
+    def release_keys(self):
+        """Release every key currently considered pressed.
+
+        Useful if the keyboard is out of sync, for example if the service was
+        disconnected while a keystroke was being sent or some other keystroke
+        was sent from another keyboard.
+        """
+        iconsole = self._get_console()
+        keyboard = self.service.IConsole_getKeyboard(iconsole)
+        self.service.IKeyboard_releaseKeys(keyboard)
+
 
 class IProgress(object):
     """IProgress constructs object to deal with waiting"""

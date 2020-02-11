@@ -53,6 +53,10 @@ Usage example
         >>> fp = open('screenshot.png', 'wb')
         >>> fp.write(screenshot_data)
         >>> fp.close()
+        >>> machine.put_usagecode(0xE1, 7) # simulate shift key
+        >>> machine.put_usagecode(6, 7) # simulate letter c
+        >>> machine.put_usagecode(6, 7, True) # stop "pressing" c
+        >>> machine.put_usagecode(0xE1, 7, True) # stop "pressing" shift
         >>> machine.save()
         >>> vbox.disconnect()
 
