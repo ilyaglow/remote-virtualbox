@@ -53,6 +53,7 @@ Usage example
         >>> fp = open('screenshot.png', 'wb')
         >>> fp.write(screenshot_data)
         >>> fp.close()
+        >>> machine.put_mouse_event(0, 0, dz=5) # scroll with the mouse wheel
         >>> machine.save()
         >>> vbox.disconnect()
 
