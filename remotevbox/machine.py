@@ -483,6 +483,97 @@ class IMachine(object):
         keyboard = self.service.IConsole_getKeyboard(iconsole)
         self.service.IKeyboard_releaseKeys(keyboard)
 
+    def put_mouse_event(
+        self,
+        dx,
+        dy,
+        dz=0,
+        dw=0,
+        left_pressed=False,
+        right_pressed=False,
+        middle_pressed=False,
+    ):
+        """Send a mouse event using relative coordinates.
+
+        It consists of a relative movement, wheel movements and a key states.
+
+        Position and wheel values can be negative and are in pixels.
+
+        Parameters
+        ----------
+        dx : int
+            movement to the right in pixels
+        dy : int
+            downward movement in pixels
+        dz : int, optional
+            clockwise wheel rotations, by default 0
+        dw : int, optional
+            horizontal wheel movement to the left, by default 0
+        left_pressed : bool, optional
+            whether the left button is pressed, by default False
+        right_pressed : bool, optional
+            whether the right button is pressed, by default False
+        middle_pressed : bool, optional
+            whether the middle button is pressed, by default False
+        """
+        button_state = (
+            (0x01 * left_pressed) + (0x02 * right_pressed) + (0x03 * middle_pressed)
+        )
+
+        iconsole = self._get_console()
+        mouse = self.service.IConsole_getMouse(iconsole)
+        self.service.IMouse_putMouseEvent(mouse, dx, dy, dz, dw, button_state)
+
+    def put_mouse_event_absolute(
+        self,
+        x,
+        y,
+        dz=0,
+        dw=0,
+        left_pressed=False,
+        right_pressed=False,
+        middle_pressed=False,
+    ):
+        """Send a mouse event using absolute coordinates.
+        Not all guest hosts support it, use absolute_mouse_pointer_supported()
+        to detect if this capability is available.
+
+        It consists of an absolute position, wheel movements and a key states.
+        Wheel values have the same meaning as the relative movement ones.
+
+        Position and wheel values can be negative and are in pixels.
+
+        Parameters
+        ----------
+        x : int
+            position from the left border in pixels
+        y : int
+            position from the top border in pixels
+        z : int, optional
+            clockwise wheel rotations, by default 0
+        w : int, optional
+            horizontal wheel movement to the left, by default 0
+        left_pressed : bool, optional
+            whether the left button is pressed, by default False
+        right_pressed : bool, optional
+            whether the right button is pressed, by default False
+        middle_pressed : bool, optional
+            whether the middle button is pressed, by default False
+        """
+        button_state = (
+            (0x01 * left_pressed) + (0x02 * right_pressed) + (0x03 * middle_pressed)
+        )
+
+        iconsole = self._get_console()
+        mouse = self.service.IConsole_getMouse(iconsole)
+        self.service.IMouse_putMouseEventAbsolute(mouse, x, y, dz, dw, button_state)
+
+    def absolute_mouse_pointer_supported(self):
+        """Return whether the guest OS supports absolute pointer positioning."""
+        iconsole = self._get_console()
+        mouse = self.service.IConsole_getMouse(iconsole)
+        return self.service.IMouse_getAbsoluteSupported(mouse)
+
 
 class IProgress(object):
     """IProgress constructs object to deal with waiting"""
