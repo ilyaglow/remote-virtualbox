@@ -1,22 +1,18 @@
 language: python
 python:
-  - '2.7'
-
+- '2.7'
 install:
-  - pip install pipenv
-  - pipenv install
-
+- pip install pipenv
+- pipenv install
 script:
-  - python -c 'import remotevbox'
-
+- python -c 'import remotevbox'
 before_deploy:
-  - rm -rf dist Pipfile.lock remotevbox.egg-info
-
+- rm -rf dist Pipfile.lock remotevbox.egg-info
 deploy:
   provider: pypi
-  user: ilyaglotov
+  user: "__token__"
   password:
-    secure: XqGX4JL9iDmU3bHyCflAj+4lN3fN22qubbkL3r04GerOKp3qrJWRRor6GHHmfCAGsd++XgUjIp8u9VxMd/f16+I/MHg7nxaH0YwfE9lTH2DFitUcAMTp+AZP+7xjls9ljeUl+nq73IyjG19jIzF5jDYzpWrvjXmKW62ro5xe46D7VzvOwFbksw7TJte6PE1RSF+hNsj6RPkw240PmXWwPKrBQZABlOYLySP4/vdOfHtqphcIpcvG56n6wvHYmhWXv8wmGdQbpY5gL8oaH7LA8aHgNywL21WLR5W5jOl6GSl7E09zPnFvOLmeRG2kBNz3vu5WSfvQddR0pEQfzbqaoDkVQKMtwe2c5VAuFC3YMT06nctQGwo8kgX5uSD0801wXImOTs1pOiOaarEHTu9qFmU8870cI5npjuw0j8Thl4X9+3k+cnmYc8+55PfkDmr3zpZBhGv3uftc9nkFL5N4AsZBgFVhughy2QaD41bC94rDWF2H5BFHLqxT/S9Qa9YzLmqa5nVhTDLBllJ8/1OMouTdkvtLxQlAR2v/6SZA4jv2IFf2Ipdx/d/fspPhFkqcVM+N7wK5tEwZn29QBD0Dl+RQq3A/W1XGh8min6sxisDYfzz8oFKSKDDjkAVf+9ztZIP3WA+RMG/NPdDdIbHYvtRNDFulBGKww8NXMO3OcYg=
+    secure: aBgzJ72w4DWg9+ukCakiRSOj8rVO63pPdfkA9ymrstAaYCX79efUm9HDSmLulows3wnrkqgznJ/U3DO2emN/rWYfwSlCf9Yi4r0mnjTujsyHbojtrV74RHuIE/y9DkiWFGgs6xt5wrv3sVD9mjWLIqY9/iJof12UgrtR8cxveAdYi5N746vrlB3rDXezylAivRd96qDIRgec9Tx4Kqje+f0GPJx8Guru16CWWRRCQqJF6CZDNxpxTQZyIMhWZolNFBxWlGec0YgVadzIR37XG+kCOIo09F5obv4t9O+Ut2wUU1/17BWf/fB3PZdOyjtpSdhHfNF4BUYrMJn+3nUaRraib0raIQwqtZbLyPU6KsAHPEsAtPhNbsutidRIfyRm5nInbfg0Ef0AfTnd2Wj2yO3B0vomRVl3sWJ1DpBhmjVDj6QCFAfsurNE4A/OjIpqTrJiLs+L/Sk/A6LdVmJqVLpLsrJfuJWfvccFsEncE/7cXkB0m9uwrqQ0pzi+SnrtHpBiQc9K2XqNs5TIphPLgbJ/J14R3SYVd+tDaA5F5VA6wNeE/vz3yoWi/HI2GBu5sWK0pVmqynFC2/iHeATppYPGaPZC8/a9JOrHGCNzgNpEtyi3PFXIeUfRcBCmKIIe0DmxS2hcdZNpUTKbTDLqQK7awXniXT0U7slRRxd91+w=
   on:
     tags: true
     branch: master
