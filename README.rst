@@ -60,6 +60,8 @@ Usage example
         >>> machine.put_mouse_event(0, 0, dz=5) # scroll with the mouse wheel
         >>> machine.absolute_mouse_pointer_supported() # does the gues OS supports absolute mouse pointer ?
         >>> machine.put_mouse_event_absolute(110, 40) # set absolute cursor position
+        >>> machine.send_key_combination(["<ctrl>", "c"]) # send key combination
+        >>> machine.send_character_string("Hello World!") # send a string from the keyboard
         >>> machine.save()
         >>> vbox.disconnect()
 
