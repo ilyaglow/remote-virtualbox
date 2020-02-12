@@ -36,7 +36,8 @@ Development version
 
 ::
 
-    pipenv install
+    pipenv install --dev --pre
+    pipenv shell
 
 Usage example
 -------------
