@@ -6,7 +6,7 @@ This module contains two classes:
 """
 from base64 import b64decode
 from datetime import datetime
-from time import mktime
+from time import mktime, sleep
 
 import zeep.exceptions
 import semver
@@ -35,6 +35,11 @@ from .exceptions import (
     WrongLockState,
     WrongMachineState,
 )
+from .us_layout import MAPPING
+
+# USB HID Keyboard page code
+KEYBOARD_PAGE = 7
+SHIFT_USB_HID_CODE = 0xE1
 
 
 class IMachine(object):
@@ -573,6 +578,101 @@ class IMachine(object):
         iconsole = self._get_console()
         mouse = self.service.IConsole_getMouse(iconsole)
         return self.service.IMouse_getAbsoluteSupported(mouse)
+
+    def send_single_key(self, key, duration=0.01, keymap="US"):
+        """Helper to send a character using USB HID.
+
+        The actual mapping between characters and usage codes depends on the
+        layout, and the OS.
+        Parameters
+        ----------
+        key : str
+            a character or a meta key name in angular brackets
+        duration : float, optional
+            duration of the key press, default to 0.01s
+        keymap : str, optional
+            keymap, currently only US is supported, default to 'US'
+
+        Raises
+        ------
+        NotImplementedError
+            If trying to use an unsupported keymap
+        ValueError
+            If the key is unknown
+        """
+        if keymap != "US":
+            raise NotImplementedError("Only US layout is supported for now")
+        if key not in MAPPING:
+            raise ValueError("Unknown key:" + key)
+        code, use_shift = MAPPING[key]
+        if use_shift:
+            self.put_usagecode(SHIFT_USB_HID_CODE, KEYBOARD_PAGE)
+        self.put_usagecode(code, KEYBOARD_PAGE)
+        sleep(duration)
+        self.put_usagecode(code, KEYBOARD_PAGE, release=True)
+        if use_shift:
+            self.put_usagecode(SHIFT_USB_HID_CODE, KEYBOARD_PAGE, release=True)
+
+    def send_key_combination(self, keys, duration=0.01, keymap="US"):
+        """Helper to send a key combination using USB HID.
+
+        The actual mapping between characters and usage codes depends on the
+        layout, and the OS.
+
+        Keys are pressed and released in the given order
+
+        Parameters
+        ----------
+        keys : list of str
+            list of characters or a meta key names in angular brackets
+        duration : float, optional
+            duration of the key press, default to 0.01s
+        keymap : str, optional
+            keymap, currently only US is supported, default to 'US'
+
+        Raises
+        ------
+        NotImplementedError
+            If trying to use an unsupported keymap
+        ValueError
+            If the key is unknown, or some character requiring Shift has been given
+        """
+        for key in keys:
+            if key not in MAPPING:
+                raise ValueError("Unknown key:" + key)
+            code, use_shift = MAPPING[key]
+            if use_shift:
+                raise ValueError(
+                    "Cannot use shift in this context, check your combination"
+                )
+            self.put_usagecode(code, KEYBOARD_PAGE)
+        sleep(duration)
+        for key in keys:
+            code, _ = MAPPING[key]
+            self.put_usagecode(code, KEYBOARD_PAGE, release=True)
+
+    def send_character_string(self, keys, duration=0.01, keymap="US"):
+        """Helper to send a string using the USB HID keyboard.
+        It simply calls `send_single_key` with every unicode character in it.
+
+        Parameters
+        ----------
+        keys : list of str or str
+            string to send, or list of key codes like 'a' or '<right shift>'
+        duration : float, optional
+            duration of eachs key press, default to 0.01s
+        keymap : str, optional
+            keymap, currently only US is supported, default to 'US'
+
+        Raises
+        ------
+        NotImplementedError
+            If trying to use an unsupported keymap
+        ValueError
+            If a key is unknown
+        """
+        for c in keys:
+            self.send_single_key(c, duration=duration, keymap=keymap)
 
 
 class IProgress(object):
