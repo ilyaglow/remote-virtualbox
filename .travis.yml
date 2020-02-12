@@ -1,11 +1,12 @@
 language: python
 python:
-- '2.7'
+- '3.6'
 install:
 - pip install pipenv
-- pipenv install
+- pipenv install --dev --pre
 script:
 - python -c 'import remotevbox'
+- black .
 before_deploy:
 - rm -rf dist Pipfile.lock remotevbox.egg-info
 deploy:
