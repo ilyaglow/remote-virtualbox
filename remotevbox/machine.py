@@ -9,7 +9,7 @@ from datetime import datetime
 from time import mktime, sleep
 
 import zeep.exceptions
-import semver
+from semver import VersionInfo
 
 from .exceptions import (
     MachineCloneError,
@@ -78,7 +78,7 @@ class IMachine(object):
             return
 
         try:
-            if semver.compare(self.vbox_version, "6.1.0") == -1:
+            if VersionInfo.parse(self.vbox_version).compare("6.1.0") == -1:
                 progress = self.service.IMachine_launchVMProcess(
                     self.mid, self.session, mode, "",
                 )
